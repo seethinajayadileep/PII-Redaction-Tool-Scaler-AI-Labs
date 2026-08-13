@@ -1,0 +1,130 @@
+{
+  "pages": [
+    {
+      "page": 1,
+      "spans": [
+        {"text": "KSH INTERNATIONAL LIMITED", "type": "company"},
+        {"text": "Sarthak Malvadkar", "type": "name"},
+        {"text": "cs.connect@kshinternational.com", "type": "email"},
+        {"text": "+ 91 20 45053237", "type": "phone"},
+        {"text": "KUSHAL SUBBAYYA HEGDE", "type": "name"},
+        {"text": "PUSHPA KUSHAL HEGDE", "type": "name"},
+        {"text": "RAJESH KUSHAL HEGDE", "type": "name"},
+        {"text": "ROHIT KUSHAL HEGDE", "type": "name"},
+        {"text": "RAKHI GIRIJA SHETTY", "type": "name"},
+        {"text": "DHAULAGIRI FAMILY TRUST", "type": "company"},
+        {"text": "EVEREST FAMILY TRUST", "type": "company"},
+        {"text": "MAKALU FAMILY TRUST", "type": "company"},
+        {"text": "BROAD FAMILY TRUST", "type": "company"},
+        {"text": "ANNAPURNA FAMILY TRUST", "type": "company"},
+        {"text": "KANCHENJUNGA FAMILY TRUST", "type": "company"},
+        {"text": "WATERLOO INDUSTRIAL PARK VI PRIVATE LIMITED", "type": "company"},
+        {"text": "11/3, 11/4 and 11/5 Village Birdewadi Chakan Taluka - Khed Pune – 410 501 Maharashtra, India", "type": "address"},
+        {"text": "201, Tower 2, Montreal Business Centre, Off Pallod Farms, Baner Pune – 411 045 Maharashtra, India", "type": "address"}
+      ]
+    },
+    {
+      "page": 5,
+      "spans": [
+        {"text": "KSH INTERNATIONAL LIMITED", "type": "company"},
+        {"text": "Bhandary Metal Extrusion Private Limited", "type": "company"},
+        {"text": "KSH International Private Limited", "type": "company"},
+        {"text": "KSH International Limited", "type": "company"},
+        {"text": "Sarthak Malvadkar", "type": "name"},
+        {"text": "+ 91 20 4505 3237", "type": "phone"},
+        {"text": "cs.connect@kshinternational.com", "type": "email"},
+        {"text": "KUSHAL SUBBAYYA HEGDE", "type": "name"},
+        {"text": "PUSHPA KUSHAL HEGDE", "type": "name"},
+        {"text": "RAJESH KUSHAL HEGDE", "type": "name"},
+        {"text": "ROHIT KUSHAL HEGDE", "type": "name"},
+        {"text": "RAKHI GIRIJA SHETTY", "type": "name"},
+        {"text": "Dhaulagiri Family Trust", "type": "company"},
+        {"text": "Everest Family Trust", "type": "company"},
+        {"text": "Makalu Family Trust", "type": "company"},
+        {"text": "Broad Family Trust", "type": "company"},
+        {"text": "Annapurna Family Trust", "type": "company"},
+        {"text": "Kanchenjunga Family Trust", "type": "company"},
+        {"text": "WATERLOO INDUSTRIAL PARK VI PRIVATE LIMITED", "type": "company"},
+        {"text": "11/3, 11/4 and 11/5, Village Birdewadi, Chakan Taluka - Khed, Pune – 410 501, Maharashtra, India", "type": "address"},
+        {"text": "201, Tower 2, Montreal Business Centre, Off Pallod Farms, Baner, Pune – 411 045, Maharashtra, India", "type": "address"}
+      ]
+    },
+    {
+      "page": 6,
+      "spans": [
+        {"text": "Nuvama Wealth Management Limited", "type": "company"},
+        {"text": "ICICI Securities Limited", "type": "company"},
+        {"text": "MUFG Intime India Private Limited", "type": "company"},
+        {"text": "Link Intime India Private Limited", "type": "company"},
+        {"text": "ksh.ipo@nuvama.com", "type": "email"},
+        {"text": "customerservice.mb@nuvama.com", "type": "email"},
+        {"text": "ksh@icicisecurities.com", "type": "email"},
+        {"text": "customercare@icicisecurities.com", "type": "email"},
+        {"text": "kshinternational.ipo@in.mpms.mufg.com", "type": "email"},
+        {"text": "+91 22 40094400", "type": "phone"},
+        {"text": "+91 22 6807 7100", "type": "phone"},
+        {"text": "+91 81081 14949", "type": "phone"},
+        {"text": "Lokesh Shah", "type": "name"},
+        {"text": "Soumavo Sarkar", "type": "name"},
+        {"text": "Kishan Rastogi", "type": "name"},
+        {"text": "Abhijit Diwan", "type": "name"},
+        {"text": "Shanti Gopalkrishnan", "type": "name"},
+        {"text": "801 - 804, Wing A, Building No 3, Inspire BKC, G Block, Bandra Kurla Complex, Bandra East, Mumbai 400051, Maharashtra, India", "type": "address"},
+        {"text": "ICICI Venture House, Appasaheb Marathe Marg, Prabhadevi, Mumbai 400025, Maharashtra, India", "type": "address"},
+        {"text": "C-101, Embassy 247, 1st Floor, L B S Marg, Vikhroli (West), Mumbai 400083, (Maharashtra), India", "type": "address"}
+      ]
+    },
+    {
+      "page": 39,
+      "spans": [
+        {"text": "Kushal Subbayya Hegde", "type": "name"},
+        {"text": "Pushpa Kushal Hegde", "type": "name"},
+        {"text": "Rajesh Kushal Hegde", "type": "name"},
+        {"text": "Rohit Kushal Hegde", "type": "name"},
+        {"text": "Rakhi Girija Shetty", "type": "name"},
+        {"text": "Dhaulagiri Family Trust", "type": "company"},
+        {"text": "Everest Family Trust", "type": "company"},
+        {"text": "Makalu Family Trust", "type": "company"},
+        {"text": "Broad Family Trust", "type": "company"},
+        {"text": "Annapurna Family Trust", "type": "company"},
+        {"text": "Kanchenjunga Family Trust", "type": "company"},
+        {"text": "Waterloo Industrial Park VI Private Limited", "type": "company"}
+      ]
+    }
+  ],
+  "synthetic": [
+    {
+      "name": "ticket_log_examples",
+      "text": "Ticket #4821 from Rashi Patil (rashhi.patil@gmail.com, +91 9876543210), DOB 12/03/1994, SSN 219-09-9999, card 4111-1111-1111-1111, IP 10.0.5.22. Also Rohan Dey (rohan.dey@gmail.com). Company: Helix Tickets Pvt Ltd. Address: 14 MG Road, Pune – 411 001, Maharashtra, India.",
+      "spans": [
+        {"text": "Rashi Patil", "type": "name"},
+        {"text": "rashhi.patil@gmail.com", "type": "email"},
+        {"text": "+91 9876543210", "type": "phone"},
+        {"text": "12/03/1994", "type": "dob"},
+        {"text": "219-09-9999", "type": "ssn"},
+        {"text": "4111-1111-1111-1111", "type": "credit_card"},
+        {"text": "10.0.5.22", "type": "ip"},
+        {"text": "Rohan Dey", "type": "name"},
+        {"text": "rohan.dey@gmail.com", "type": "email"},
+        {"text": "Helix Tickets Pvt Ltd", "type": "company"},
+        {"text": "14 MG Road, Pune – 411 001, Maharashtra, India", "type": "address"}
+      ]
+    },
+    {
+      "name": "format_variants",
+      "text": "Contact Person: Ananya Deshmukh phoned +1 (415) 555-2671. DOB 1994-03-12, born on 12 March 1994. SSN 219099999. Visa card 4111-1111-1111-1111. Host 10.0.5.22 and IPv6 2001:db8:85a3::8a2e:370:7334. Office: 500 Market Street, San Francisco, CA 94105. Vendor: Helix Tickets LLC.",
+      "spans": [
+        {"text": "Ananya Deshmukh", "type": "name"},
+        {"text": "+1 (415) 555-2671", "type": "phone"},
+        {"text": "1994-03-12", "type": "dob"},
+        {"text": "12 March 1994", "type": "dob"},
+        {"text": "219099999", "type": "ssn"},
+        {"text": "4111-1111-1111-1111", "type": "credit_card"},
+        {"text": "10.0.5.22", "type": "ip"},
+        {"text": "2001:db8:85a3::8a2e:370:7334", "type": "ip"},
+        {"text": "500 Market Street, San Francisco, CA 94105", "type": "address"},
+        {"text": "Helix Tickets LLC", "type": "company"}
+      ]
+    }
+  ]
+}

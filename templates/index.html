@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PII Redaction Tool</title>
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <p class="eyebrow">Document privacy</p>
+      <h1>PII Redaction Tool</h1>
+      <p class="lede">
+        Upload a prospectus PDF or a ticket-log text file. The tool finds personal
+        details and replaces each one with a <strong>stable fake stand-in</strong>
+        — the same real value always becomes the same fake value — then you
+        download a redacted Word document.
+      </p>
+    </header>
+
+    <ol class="steps" aria-label="How to use this tool">
+      <li>
+        <span class="step-num">1</span>
+        <div>
+          <strong>Choose a file</strong>
+          <p>PDF prospectus or <code>.txt</code> ticket log. Or try the sample below.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div>
+          <strong>Redact</strong>
+          <p>Names, emails, phones, and other PII are swapped for fake values.</p>
+        </div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div>
+          <strong>Download</strong>
+          <p>Get the redacted <code>.docx</code> and, when available, an evaluation report.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="layout">
+      <section class="card upload-card" aria-labelledby="upload-heading">
+        <h2 id="upload-heading">Upload a document</h2>
+        <p class="hint">Accepted: <strong>.pdf</strong> and <strong>.txt</strong>. Large PDFs can take a minute.</p>
+
+        <form id="form">
+          <div class="dropzone" id="dropzone" tabindex="0" aria-label="Drop a file here, or click to browse">
+            <input id="file" type="file" accept=".pdf,.txt,application/pdf,text/plain" />
+            <div class="dropzone-body" id="dropzone-empty">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2 6 6h-6zM8 13h8v2H8zm0 4h8v2H8z"/>
+              </svg>
+              <p class="drop-title">Drop a file here, or click to browse</p>
+              <p class="drop-sub">PDF prospectus · ticket log (.txt)</p>
+            </div>
+            <div class="file-chip" id="file-chip" hidden>
+              <span class="file-name" id="file-name"></span>
+              <span class="file-meta" id="file-meta"></span>
+              <button type="button" class="linkish" id="clear-file">Change file</button>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="run" disabled>Redact document</button>
+            <button type="button" class="secondary" id="sample">Try sample ticket log</button>
+          </div>
+        </form>
+
+        <p class="status" id="status" hidden role="status"></p>
+      </section>
+
+      <aside class="card help-card">
+        <h2>What gets replaced</h2>
+        <ul class="pii-list">
+          <li>Person names</li>
+          <li>Emails</li>
+          <li>Phone numbers</li>
+          <li>Company / trust names</li>
+          <li>Addresses</li>
+          <li>SSN, credit cards, DOB, IP</li>
+        </ul>
+        <h2>Left unchanged</h2>
+        <p class="hint">
+          CIN, PAN, DIN, rupee amounts, share counts, page numbers, and statute names
+          are treated as document data, not personal data.
+        </p>
+        <h2>How names are found</h2>
+        <p class="hint">
+          Structured types (email, phone, SSN, card, IP, DOB) use patterns.
+          People and companies also use a known list for this prospectus, plus
+          lines like <code>Contact Person:</code> and cue words such as
+          <code>from</code> / <code>Dear</code>. A brand-new name with no cue
+          can still be missed.
+        </p>
+      </aside>
+    </div>
+
+    <section class="card results" id="results" hidden aria-live="polite">
+      <div class="results-head">
+        <div>
+          <h2>Redaction complete</h2>
+          <p class="hint" id="results-summary"></p>
+        </div>
+        <button type="button" class="secondary" id="start-over">Start over</button>
+      </div>
+
+      <div class="downloads">
+        <a class="btn-download primary" id="docx" href="#">Download redacted Word file</a>
+        <a class="btn-download" id="report" href="#" hidden>Download evaluation report</a>
+      </div>
+
+      <h3>Replacements by type</h3>
+      <ul class="count-grid" id="counts"></ul>
+      <p class="hint">Original personal values are not shown in the browser. Download the Word file to review replacements.</p>
+
+      <details class="metrics" id="metrics-box" hidden>
+        <summary>Optional: evaluation scores on labeled prospectus pages</summary>
+        <p class="hint">
+          These numbers are for hand-labeled prospectus pages only. Synthetic ticket
+          tests are in the downloadable report and are not mixed into this score.
+        </p>
+        <dl class="metric-row" id="metrics"></dl>
+      </details>
+    </section>
+  </div>
+  <script src="/static/app.js?v=4"></script>
+</body>
+</html>
