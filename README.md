@@ -1,135 +1,131 @@
 # PII Redaction Tool
 
-This tool reads a PDF or Word copy of the KSH International Red Herring Prospectus, or a `.txt` ticket log, finds personally identifiable information (PII), replaces each value with a **stable fake stand-in**, and writes a redacted Word file (`.docx`).
+A Python application that detects personally identifiable information (PII), replaces it with stable fake alternatives, and produces a redacted Word document. It accepts `.txt`, `.pdf`, and `.docx` input through either the command line or a FastAPI web interface.
 
-The same real value always becomes the same fake value in one run.
+The same detected value receives the same replacement throughout one document. DOCX processing preserves tables, headers, footers, text boxes, and run formatting where possible. Images are checked with Tesseract OCR; sensitive identity-document images are replaced with a clear placeholder while ordinary logos and images are retained.
 
-## Install and run
+## Supported PII
+
+The tool covers all nine categories required by the assignment:
+
+| PII category | Detection approach |
+|---|---|
+| Full names | Gazetteer and context cues such as `Contact Person`, `Dear`, and titles |
+| Email addresses | Email pattern matching |
+| Phone numbers | International, Indian, and common US formats |
+| Company names | Gazetteer, company suffixes, and family-trust patterns |
+| Physical addresses | Gazetteer plus Indian PIN, street, and basic US address patterns |
+| SSNs | Hyphenated format or digits following an SSN label |
+| Credit cards | 13–19 digits, Luhn validation, and card-related context |
+| Dates of birth | Date patterns following `DOB`, `date of birth`, or `born` |
+| IP addresses | Valid IPv4 and IPv6 addresses |
+
+Order and ticket numbers are not treated as credit cards unless the number passes the Luhn check and appears in card-related context. CIN, PAN, DIN, monetary values, share counts, page numbers, and statute names are outside the selected PII policy.
+
+## Installation
+
+Python 3.12 or later is recommended.
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Word files with identity-document images also need the **Tesseract** binary (`tesseract-ocr` on Debian/Ubuntu, or `brew install tesseract` on macOS). If Tesseract is missing, the tool reports a clear error instead of leaving those images unchanged.
+On Windows, activate the environment with:
 
-Redact the prospectus PDF and write the evaluation report:
-
-```bash
-python main.py samples/Red_Herring_Prospectus.pdf -o output/KSH_RHP_redacted.docx --evaluate
+```powershell
+.venv\Scripts\activate
 ```
 
-Redact the prospectus Word file (tables, headers, footers, and run formatting are kept).
-Identity-document images are replaced with a placeholder. Document-level PDF gold scores are **N/A** for Word input:
+DOCX files containing images also require the Tesseract OCR binary:
 
 ```bash
-python main.py "samples/Red Herring Prospectus.docx" -o "output/Red_Herring_Prospectus_redacted.docx"
+# macOS
+brew install tesseract
+
+# Debian/Ubuntu
+sudo apt-get install tesseract-ocr
 ```
 
-Redact the sample ticket log only:
+If OCR is required but unavailable, the application stops with an explanatory error rather than silently leaving sensitive images unchanged.
+
+## Command-line usage
+
+Redact a Word document:
 
 ```bash
-python main.py samples/ticket_log.txt -o output/ticket_log_redacted.docx
+python main.py "input.docx" -o "output/redacted.docx"
 ```
 
-Optional web UI:
+Redact a PDF and create an evaluation report:
+
+```bash
+python main.py "input.pdf" -o "output/redacted.docx" --evaluate
+```
+
+Redact a ticket log:
+
+```bash
+python main.py "samples/ticket_log.txt" -o "output/ticket_log_redacted.docx"
+```
+
+## Web application
+
+Start the FastAPI interface locally:
 
 ```bash
 uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 
-Open `http://127.0.0.1:8000`, upload a file, download the `.docx`. The API does **not** return original PII.
+Open `http://127.0.0.1:8000`, upload a supported file, and download the processed DOCX. Original uploaded PII is not included in API responses.
 
-## Deploy
+## Evaluation strategy
 
-The web app is FastAPI (`app.py`). **Railway** is the better host for large PDFs. **Vercel** can run the same app as a Python function, with a 60-second time limit and a smaller upload cap.
+Ground-truth labels are stored in `data/gold_labels.json`. A predicted occurrence is counted as a true positive when it has the same PII category and page as a gold occurrence and their character spans overlap by at least half of the shorter span. Each occurrence is counted separately.
 
-### Railway
+The report uses:
 
-1. Push this repo to GitHub.
-2. In [Railway](https://railway.app), **New Project → Deploy from GitHub repo**.
-3. Railway uses the `Dockerfile` (Python 3.12, Tesseract OCR, DejaVu fonts), listens on `$PORT`, and checks `GET /health`.
-4. Open the public URL when the deploy finishes. `/health` returns `{"ok": true, "ocr": true}` when Tesseract is available.
+- **Precision:** `TP / (TP + FP)`
+- **Recall:** `TP / (TP + FN)`
+- **F1:** `2 × Precision × Recall / (Precision + Recall)`
+- **Accuracy:** character-level agreement between PII and non-PII labels
 
-If a previous deploy set a custom start command in the Railway dashboard (for example `python main.py`), change it to `python start.py` or clear it so `railway.toml` is used.
+The labelled prospectus evaluation covers selected PDF pages only. A DOCX is not scored against PDF character offsets, so its prospectus metrics are correctly reported as `N/A` with `Scored: false`. Synthetic labelled detector tests are reported separately and are not presented as full-document prospectus accuracy. When a metric has no valid denominator, it is reported as `N/A` rather than an invented score.
 
-Optional: set `CORS_ORIGINS` if a separate frontend calls the API (comma-separated origins). Default is `*`.
+False-positive and false-negative examples are masked before being written to the report.
 
-### Vercel
+## Approach and trade-offs
 
-1. Import the same GitHub repo at [vercel.com/new](https://vercel.com/new).
-2. Vercel detects FastAPI from `requirements.txt` and uses `app:app` (`pyproject.toml`).
-3. Deploy. The UI is served at `/`.
+The detector uses regular expressions and small gazetteers instead of a neural NER model. This keeps installation and execution simple and makes new PII categories easy to add, but it creates precision/recall trade-offs:
 
-Vercel Hobby functions max out at **60 seconds** and about **4.5 MB** request bodies. Use Railway for the full prospectus PDF or other large files. Ticket logs and smaller PDFs are fine.
+- Names without a known value or context cue may be missed.
+- Broad title-case name matching is avoided because prospectus headings can look like names.
+- Bare 10-digit values are not automatically treated as phones, which protects ticket and order identifiers.
+- Credit-card detection requires both a valid Luhn checksum and card-related context.
+- Dates are treated as dates of birth only when a DOB-related label is present.
+- Address boundaries can occasionally be slightly longer or shorter than a hand-labelled span.
 
-## Approach
+## Project structure
 
-Hybrid **regex + gazetteer**. There is no neural NER model.
-
-| PII type | How it is found |
-|---|---|
-| Email | Pattern for `name@domain` |
-| Phone | `+` country codes, Indian `+91`, US `(xxx) xxx-xxxx` |
-| SSN | `123-45-6789` or unhyphenated `123456789` after the word `SSN` |
-| Credit card | 13–19 digits that pass a **Luhn** check, and a nearby word such as `card`, `Visa`, or `payment` |
-| IP | IPv4 (not version-like `3.13.0.1`) and IPv6, including compressed `::` forms |
-| Date of birth | Only next to `DOB` / `date of birth` / `born`. Formats: `DD/MM/YYYY`, `YYYY-MM-DD`, `12 March 1994` |
-| Person names | List in `data/gazetteer.json`, `Contact Person:` lines, and a few cue words (`from`, `Dear`, `Mr`) |
-| Company / trust | Gazetteer plus suffixes such as `Limited`, `Ltd`, `LLP`, `LLC`, `Inc`, `Family Trust` |
-| Address | Gazetteer offices, Indian PIN/street patterns, and simple US `Street` + ZIP patterns |
-
-CIN, PAN, DIN, rupee amounts, share counts, page numbers, and statute names are **not** treated as PII.
-
-Fake values are hashed from the original so they stay stable. Emails use `example.com`. IPs use documentation ranges (`192.0.2.x`, `2001:db8::`). SSNs use invalid area/group numbers (`000-00-xxxx`).
-
-## Known limitations
-
-- A person who is not in the gazetteer and has no cue (`Contact Person:`, `from`, `Mr`) can be missed.
-- Generic Title Case matching is **not** used on the whole prospectus, because headings like “Fresh Issue” and “Equity Shares” would be tagged as names.
-- IPv4 values where every octet is small (for example `8.8.8.8`) may be skipped so software versions like `3.13.0.1` are not redacted.
-- Bare 10-digit numbers with no `+` country code are not phones (avoids ticket IDs).
-- Address spans can run a little long or short versus the labeled gold span.
-- Credit cards without a nearby word such as `card` / `Visa` / `payment` are left alone so order numbers are not redacted.
-- These are precision-first choices. Misses (false negatives) are possible; extra redactions (false positives) should stay rare on structured types.
-
-## How evaluation works
-
-Gold labels live in `data/gold_labels.json`.
-
-**Attached-document evaluation** uses prospectus **PDF** pages **1, 5, 6, 39** only, and only when that PDF looks like the KSH Red Herring Prospectus. A Word (.docx) file is **not** scored against that PDF gold set (Precision/Recall/F1/Accuracy are N/A, Scored: false). Each labeled span is one occurrence. A prediction is a true positive when it has the **same type on the same page** and the **character offsets overlap** (at least half of the shorter span). The same string twice counts twice — we do not collapse to unique `(text, type)` pairs.
-
-Reported numbers: **precision**, **recall**, **F1**, and **character-level accuracy**. If nothing was scored, the value is **N/A**, not 1.0.
-
-**Synthetic unit tests** are separate snippets (SSN, card, DOB, IP, extra date/phone/IPv6 shapes). They check the detectors. They are **not** added into the prospectus overall score.
-
-False-positive and false-negative examples in the report are **masked** so original PII is not written to disk in logs.
-
-```bash
-python main.py samples/Red_Herring_Prospectus.pdf -o output/KSH_RHP_redacted.docx --evaluate
+```text
+redact/                 Detection, replacement, extraction, DOCX and evaluation logic
+data/gazetteer.json     Assignment-specific names, companies and addresses
+data/gold_labels.json   Labelled evaluation occurrences and synthetic cases
+samples/ticket_log.txt  Synthetic text example
+app.py                  FastAPI upload application
+main.py                 Command-line entry point
+start.py                Production server entry point
+Dockerfile              Railway container with Python and Tesseract
 ```
 
-Writes:
+Input prospectus files, user uploads, and generated outputs are intentionally excluded from version control to avoid publishing source PII or temporary processing artifacts. The processed DOCX and evaluation report should be shared separately using view-only links.
 
-- `output/KSH_RHP_redacted.docx`
-- `evaluation_report.md`
-- `output/evaluation_metrics.json`
+## Extending the tool
 
-## How to add a new PII type
+To support another PII category:
 
-1. Add a detector function in `redact/detectors.py` and list it in `DETECTORS`.
-2. Add a fake generator branch in `redact/replacements.py`.
-3. Add gold examples in `data/gold_labels.json` (prospectus page and/or a synthetic snippet).
-4. Re-run `python main.py samples/Red_Herring_Prospectus.pdf --evaluate`.
-
-## Layout
-
-- `redact/` — extract, detect, replace, write, evaluate
-- `redact/docx_io.py` — in-place Word redaction (paragraphs, tables, headers, footers)
-- `data/gazetteer.json` — names, companies, addresses for this prospectus
-- `data/gold_labels.json` — labels for pages 1, 5, 6, 39 and synthetic tests
-- `app.py` — upload UI (Railway / Vercel)
-- `start.py` — production server for Railway/Docker
-- `Dockerfile`, `railway.toml`, `Procfile` — Railway
-- `vercel.json`, `pyproject.toml` — Vercel
+1. Add its detector to `redact/detectors.py` and register it in `DETECTORS`.
+2. Add its fake-value generator to `redact/replacements.py`.
+3. Add labelled examples to `data/gold_labels.json`.
+4. Run the evaluation again and document any new false positives or false negatives.

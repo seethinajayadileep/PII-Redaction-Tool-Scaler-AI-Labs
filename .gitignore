@@ -4,7 +4,11 @@ __pycache__/
 venv/
 .pytest_cache/
 uploads/
-output/
+output/*
+!output/.gitkeep
+samples/*.pdf
+samples/*.docx
+samples/manual_test_*
 .DS_Store
 .vercel
 .railway
