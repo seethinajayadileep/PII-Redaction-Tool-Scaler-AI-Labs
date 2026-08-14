@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py main.py ./
+COPY app.py start.py ./
 COPY redact ./redact
 COPY data ./data
 COPY templates ./templates
@@ -18,4 +18,4 @@ COPY samples ./samples
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["python", "start.py"]

@@ -40,8 +40,10 @@ The web app is FastAPI (`app.py`). **Railway** is the better host for large PDFs
 
 1. Push this repo to GitHub.
 2. In [Railway](https://railway.app), **New Project → Deploy from GitHub repo**.
-3. Railway uses the `Dockerfile` and binds to `$PORT`.
+3. Railway uses the `Dockerfile`, listens on `$PORT` (IPv6), and checks `GET /health`.
 4. Open the public URL when the deploy finishes.
+
+If a previous deploy set a custom start command in the Railway dashboard (for example `python main.py`), change it to `python start.py` or clear it so `railway.toml` is used.
 
 Optional: set `CORS_ORIGINS` if a separate frontend calls the API (comma-separated origins). Default is `*`.
 
@@ -118,5 +120,6 @@ Writes:
 - `data/gazetteer.json` — names, companies, addresses for this prospectus
 - `data/gold_labels.json` — labels for pages 1, 5, 6, 39 and synthetic tests
 - `app.py` — upload UI (Railway / Vercel)
+- `start.py` — production server for Railway/Docker
 - `Dockerfile`, `railway.toml`, `Procfile` — Railway
 - `vercel.json`, `pyproject.toml` — Vercel
