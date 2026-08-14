@@ -4,6 +4,7 @@ __pycache__/
 venv/
 .pytest_cache/
 uploads/
+output/
 .DS_Store
 .vercel
 .railway

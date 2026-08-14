@@ -54,12 +54,12 @@ function setStatus(message, kind) {
 }
 
 function showSelectedFile(file) {
-  const ok = file && /\.(pdf|txt)$/i.test(file.name);
+  const ok = file && /\.(pdf|txt|docx)$/i.test(file.name);
   dropEmpty.hidden = Boolean(file);
   fileChip.hidden = !file;
   if (file) {
     fileNameEl.textContent = file.name;
-    fileMetaEl.textContent = `${formatSize(file.size)} · ${ok ? "ready to redact" : "use a .pdf or .txt file"}`;
+    fileMetaEl.textContent = `${formatSize(file.size)} · ${ok ? "ready to redact" : "use a .pdf, .txt, or .docx file"}`;
   }
   runBtn.disabled = !ok;
 }
@@ -207,7 +207,7 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const file = fileInput.files[0];
   if (!file) {
-    setStatus("Choose a PDF or .txt file first, or try the sample ticket log.", "error");
+    setStatus("Choose a PDF, TXT, or DOCX file first, or try the sample ticket log.", "error");
     return;
   }
   const data = new FormData();

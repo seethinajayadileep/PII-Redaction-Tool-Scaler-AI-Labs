@@ -1,2 +1,5 @@
+[phases.setup]
+aptPkgs = ["tesseract-ocr", "fonts-dejavu-core"]
+
 [start]
 cmd = "python start.py"

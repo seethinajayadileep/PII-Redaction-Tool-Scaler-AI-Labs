@@ -1,6 +1,6 @@
 # PII Redaction Tool
 
-This tool reads a PDF (the attached KSH International Red Herring Prospectus) or a `.txt` ticket log, finds personally identifiable information (PII), replaces each value with a **stable fake stand-in**, and writes a redacted Word file (`.docx`).
+This tool reads a PDF or Word copy of the KSH International Red Herring Prospectus, or a `.txt` ticket log, finds personally identifiable information (PII), replaces each value with a **stable fake stand-in**, and writes a redacted Word file (`.docx`).
 
 The same real value always becomes the same fake value in one run.
 
@@ -12,10 +12,19 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Redact the prospectus and write the evaluation report:
+Word files with identity-document images also need the **Tesseract** binary (`tesseract-ocr` on Debian/Ubuntu, or `brew install tesseract` on macOS). If Tesseract is missing, the tool reports a clear error instead of leaving those images unchanged.
+
+Redact the prospectus PDF and write the evaluation report:
 
 ```bash
 python main.py samples/Red_Herring_Prospectus.pdf -o output/KSH_RHP_redacted.docx --evaluate
+```
+
+Redact the prospectus Word file (tables, headers, footers, and run formatting are kept).
+Identity-document images are replaced with a placeholder. Document-level PDF gold scores are **N/A** for Word input:
+
+```bash
+python main.py "samples/Red Herring Prospectus.docx" -o "output/Red_Herring_Prospectus_redacted.docx"
 ```
 
 Redact the sample ticket log only:
@@ -40,8 +49,8 @@ The web app is FastAPI (`app.py`). **Railway** is the better host for large PDFs
 
 1. Push this repo to GitHub.
 2. In [Railway](https://railway.app), **New Project → Deploy from GitHub repo**.
-3. Railway uses the `Dockerfile`, listens on `$PORT` (IPv6), and checks `GET /health`.
-4. Open the public URL when the deploy finishes.
+3. Railway uses the `Dockerfile` (Python 3.12, Tesseract OCR, DejaVu fonts), listens on `$PORT`, and checks `GET /health`.
+4. Open the public URL when the deploy finishes. `/health` returns `{"ok": true, "ocr": true}` when Tesseract is available.
 
 If a previous deploy set a custom start command in the Railway dashboard (for example `python main.py`), change it to `python start.py` or clear it so `railway.toml` is used.
 
@@ -89,7 +98,7 @@ Fake values are hashed from the original so they stay stable. Emails use `exampl
 
 Gold labels live in `data/gold_labels.json`.
 
-**Attached-document evaluation** uses prospectus pages **1, 5, 6, 39** only, and only when the file looks like the KSH Red Herring Prospectus (several known phrases on those pages). A random long PDF is not scored. Each labeled span is one occurrence. A prediction is a true positive when it has the **same type on the same page** and the **character offsets overlap** (at least half of the shorter span). The same string twice counts twice — we do not collapse to unique `(text, type)` pairs.
+**Attached-document evaluation** uses prospectus **PDF** pages **1, 5, 6, 39** only, and only when that PDF looks like the KSH Red Herring Prospectus. A Word (.docx) file is **not** scored against that PDF gold set (Precision/Recall/F1/Accuracy are N/A, Scored: false). Each labeled span is one occurrence. A prediction is a true positive when it has the **same type on the same page** and the **character offsets overlap** (at least half of the shorter span). The same string twice counts twice — we do not collapse to unique `(text, type)` pairs.
 
 Reported numbers: **precision**, **recall**, **F1**, and **character-level accuracy**. If nothing was scored, the value is **N/A**, not 1.0.
 
@@ -117,6 +126,7 @@ Writes:
 ## Layout
 
 - `redact/` — extract, detect, replace, write, evaluate
+- `redact/docx_io.py` — in-place Word redaction (paragraphs, tables, headers, footers)
 - `data/gazetteer.json` — names, companies, addresses for this prospectus
 - `data/gold_labels.json` — labels for pages 1, 5, 6, 39 and synthetic tests
 - `app.py` — upload UI (Railway / Vercel)

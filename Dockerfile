@@ -6,6 +6,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -14,7 +18,7 @@ COPY redact ./redact
 COPY data ./data
 COPY templates ./templates
 COPY static ./static
-COPY samples ./samples
+COPY samples/ticket_log.txt ./samples/ticket_log.txt
 
 EXPOSE 8000
 

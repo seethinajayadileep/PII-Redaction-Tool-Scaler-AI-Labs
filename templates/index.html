@@ -12,10 +12,10 @@
       <p class="eyebrow">Document privacy</p>
       <h1>PII Redaction Tool</h1>
       <p class="lede">
-        Upload a prospectus PDF or a ticket-log text file. The tool finds personal
-        details and replaces each one with a <strong>stable fake stand-in</strong>
-        — the same real value always becomes the same fake value — then you
-        download a redacted Word document.
+        Upload a prospectus PDF, a Word file, or a ticket-log text file. The tool
+        finds personal details and replaces each one with a <strong>stable fake
+        stand-in</strong> — the same real value always becomes the same fake value —
+        then you download a redacted Word document.
       </p>
     </header>
 
@@ -24,7 +24,7 @@
         <span class="step-num">1</span>
         <div>
           <strong>Choose a file</strong>
-          <p>PDF prospectus or <code>.txt</code> ticket log. Or try the sample below.</p>
+          <p>PDF, TXT, or DOCX. Or try the sample below.</p>
         </div>
       </li>
       <li>
@@ -46,17 +46,17 @@
     <div class="layout">
       <section class="card upload-card" aria-labelledby="upload-heading">
         <h2 id="upload-heading">Upload a document</h2>
-        <p class="hint">Accepted: <strong>.pdf</strong> and <strong>.txt</strong>. Large PDFs can take a minute.</p>
+        <p class="hint">Accepted files: PDF, TXT and DOCX</p>
 
         <form id="form">
           <div class="dropzone" id="dropzone" tabindex="0" aria-label="Drop a file here, or click to browse">
-            <input id="file" type="file" accept=".pdf,.txt,application/pdf,text/plain" />
+            <input id="file" type="file" accept=".pdf,.txt,.docx,application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
             <div class="dropzone-body" id="dropzone-empty">
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2 6 6h-6zM8 13h8v2H8zm0 4h8v2H8z"/>
               </svg>
               <p class="drop-title">Drop a file here, or click to browse</p>
-              <p class="drop-sub">PDF prospectus · ticket log (.txt)</p>
+              <p class="drop-sub">Accepted files: PDF, TXT and DOCX</p>
             </div>
             <div class="file-chip" id="file-chip" hidden>
               <span class="file-name" id="file-name"></span>
@@ -128,6 +128,6 @@
       </details>
     </section>
   </div>
-  <script src="/static/app.js?v=4"></script>
+  <script src="/static/app.js?v=5"></script>
 </body>
 </html>

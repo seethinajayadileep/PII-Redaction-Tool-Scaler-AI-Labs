@@ -156,26 +156,37 @@ def score_text(text: str, gold_items: list[dict], *, page: int | None=None) -> d
     return result
 
 def is_labeled_prospectus(pages: list[str]) -> bool:
-    """True only for the KSH RHP sample, not every long PDF."""
+    """True only for the labeled PDF sample pages, not a Word conversion."""
     if len(pages) < 39:
         return False
-    blob = '\n'.join((pages[i] for i in (0, 4, 5, 38) if i < len(pages))).lower()
-    phrases = ('red herring prospectus', 'ksh international limited', 'book built offer', 'nuvama wealth management')
-    return sum((1 for phrase in phrases if phrase in blob)) >= 3
+    blob = "\n".join(pages[i] for i in (0, 4, 5, 38) if i < len(pages)).lower()
+    phrases = (
+        "red herring prospectus",
+        "ksh international limited",
+        "book built offer",
+        "nuvama wealth management",
+    )
+    return sum(1 for phrase in phrases if phrase in blob) >= 3
 
-def evaluate_pages(original_pages: list[str], gold: dict | None=None) -> dict:
+def evaluate_pages(
+    original_pages: list[str],
+    gold: dict | None = None,
+    *,
+    source_kind: str | None = None,
+) -> dict:
     gold = gold or load_gold()
     per_page = []
     totals = defaultdict(int)
     type_totals: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    gold_pages = gold.get('pages') or []
-    score_prospectus = is_labeled_prospectus(original_pages)
+    gold_pages = gold.get("pages") or []
+    kind = (source_kind or "").lower().lstrip(".")
+    score_prospectus = kind not in {"docx", "doc"} and is_labeled_prospectus(original_pages)
     if score_prospectus:
         for spec in gold_pages:
-            page_no = spec['page']
+            page_no = spec["page"]
             if page_no < 1 or page_no > len(original_pages):
                 continue
-            result = score_text(original_pages[page_no - 1], spec['spans'], page=page_no)
+            result = score_text(original_pages[page_no - 1], spec["spans"], page=page_no)
             per_page.append(result)
             for key in ('tp', 'fp', 'fn'):
                 totals[key] += result[key]
@@ -223,7 +234,7 @@ def _fmt(value: float | None) -> str:
 def render_report(metrics: dict) -> str:
     lines = ['# PII redaction evaluation report', '', 'Two scorecards are kept apart:', '', '1. **Attached document** — hand labels on prospectus pages 1, 5, 6, 39.', '2. **Synthetic unit tests** — a small ticket-log snippet (SSN, card, DOB, IP,', '   extra date/phone/IPv6 shapes). These numbers are **not** mixed into (1).', '', 'A predicted span is a true positive when it has the same type as a gold span', 'on the same page and the character offsets overlap by at least half of the', 'shorter span. Each occurrence counts once (not unique text).', '', 'If a denominator is zero, the metric is **N/A** (not 1.0).', '', '## Attached document (prospectus sample pages)', '']
     if not metrics.get('scored'):
-        lines.append('No prospectus pages were scored (the file is not the labeled RHP sample).')
+        lines.append("No prospectus pages were scored (Word files and unmatched PDFs are N/A).")
         lines.append('')
         lines.append(f'- **Precision:** {_fmt(None)}')
         lines.append(f'- **Recall:** {_fmt(None)}')
@@ -255,7 +266,23 @@ def render_report(metrics: dict) -> str:
         for pii_type, stats in (syn.get('by_type') or {}).items():
             lines.append(f"| {pii_type} | {_fmt(stats['precision'])} | {_fmt(stats['recall'])} | {_fmt(stats['f1'])} | {stats['tp']} | {stats['fp']} | {stats['fn']} |")
         lines.append('')
-    lines += ['## Method', '', '- Gold set: prospectus pages **1, 5, 6, 39** plus synthetic ticket snippets.', '- Matching uses **page number + character offsets**, not unique (text, type) keys.', '- Character-level accuracy: each character is PII or not from gold vs predicted spans.', '- CIN, PAN, DIN, rupee amounts, share counts, page numbers, and statute names', '  were **not** labeled as PII.', '- Scoring the attached document requires a prospectus fingerprint (known phrases', '  on the labeled pages). Any other file, including a long unrelated PDF, is N/A.', '- These document scores are for the labeled sample, not the full 130-page PDF.', '', '## False positives / false negatives', '', 'Examples are masked so original PII is not written into the report.', '']
+    lines += [
+        "## Method",
+        "",
+        "- Gold set: prospectus pages **1, 5, 6, 39** plus synthetic ticket snippets.",
+        "- Matching uses **page number + character offsets**, not unique (text, type) keys.",
+        "- Character-level accuracy: each character is PII or not from gold vs predicted spans.",
+        "- CIN, PAN, DIN, rupee amounts, share counts, page numbers, and statute names",
+        "  were **not** labeled as PII.",
+        "- Scoring the attached **PDF** requires a prospectus fingerprint on labeled",
+        "  pages 1, 5, 6, 39. Word (.docx) files are not scored against that PDF gold set.",
+        "- These PDF scores are for the labeled sample, not the full prospectus.",
+        "",
+        "## False positives / false negatives",
+        "",
+        "Examples are masked so original PII is not written into the report.",
+        "",
+    ]
     fps = []
     fns = []
     for page in metrics.get('pages') or []:

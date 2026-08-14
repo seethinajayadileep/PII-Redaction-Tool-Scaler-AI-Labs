@@ -32,9 +32,9 @@ class ReplacementTable:
         key = original.strip()
         if not key:
             return original
-        canon = key.lower()
+        canon = " ".join(key.lower().split())
         if canon not in self._canon:
-            fake = fake_for(key, pii_type, self.used)
+            fake = fake_for(canon, pii_type, self.used)
             self._canon[canon] = fake
             self.mapping[key] = fake
         fake = self._canon[canon]
@@ -57,4 +57,56 @@ def apply_redactions(text: str, spans: list[dict], table: ReplacementTable | Non
         cursor = span['end']
         counts[span['type']] = counts.get(span['type'], 0) + 1
     pieces.append(text[cursor:])
-    return (''.join(pieces), counts, table)
+    return ("".join(pieces), counts, table)
+
+
+def replace_span_in_runs(runs: list, start: int, end: int, replacement: str) -> None:
+    """Overwrite characters [start:end) across runs. First run keeps its formatting."""
+    pos = 0
+    hits: list[tuple[object, int, int]] = []
+    for run in runs:
+        text = run.text or ""
+        run_start, run_end = pos, pos + len(text)
+        if run_end > start and run_start < end:
+            local_start = max(0, start - run_start)
+            local_end = min(len(text), end - run_start)
+            hits.append((run, local_start, local_end))
+        pos = run_end
+    _apply_run_hits(hits, replacement)
+
+
+def replace_span_in_indexed_runs(
+    index: list[tuple[object | None, int | None]],
+    start: int,
+    end: int,
+    replacement: str,
+) -> None:
+    """Same as replace_span_in_runs, using a char → (run, offset) map.
+
+    `None` entries are synthetic characters (for example a space inserted
+    between wrapped paragraphs) and are skipped.
+    """
+    hits: list[list] = []
+    current = None
+    for pos in range(start, min(end, len(index))):
+        run, local = index[pos]
+        if run is None or local is None:
+            current = None
+            continue
+        if current is None or current[0] is not run:
+            current = [run, local, local + 1]
+            hits.append(current)
+        else:
+            current[2] = local + 1
+    _apply_run_hits([(run, a, b) for run, a, b in hits], replacement)
+
+
+def _apply_run_hits(hits: list[tuple[object, int, int]], replacement: str) -> None:
+    if not hits:
+        return
+    for run, local_start, local_end in reversed(hits[1:]):
+        text = run.text or ""
+        run.text = text[:local_start] + text[local_end:]
+    run, local_start, local_end = hits[0]
+    text = run.text or ""
+    run.text = text[:local_start] + replacement + text[local_end:]

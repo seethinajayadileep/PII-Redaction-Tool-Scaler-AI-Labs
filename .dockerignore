@@ -9,8 +9,8 @@ __pycache__
 .DS_Store
 uploads
 output
-*.docx
-*.pdf
+samples/*.pdf
+samples/*.docx
 evaluation_report.md
 output/evaluation_metrics.json
 README.md

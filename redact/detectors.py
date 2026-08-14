@@ -25,14 +25,93 @@ MONTH = '(?:January|February|March|April|May|June|July|August|September|October|
 DOB_LABEL = '(?:date\\s+of\\s+birth|d\\.?o\\.?b\\.?|born(?:\\s+on)?)'
 DOB_RE = re.compile(DOB_LABEL + '\\s*[:\\-]?\\s*' + '(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}|\\d{4}-\\d{2}-\\d{2}|\\d{1,2}\\s+' + MONTH + '\\s+\\d{4}|' + MONTH + '\\s+\\d{1,2},?\\s+\\d{4})', re.IGNORECASE)
 COMPANY_SUFFIX_RE = re.compile("\\b(?:[A-Z][A-Za-z0-9&.'’\\-]+(?:[ \\t]+[A-Z0-9][A-Za-z0-9&.'’\\-]*){0,8})(?:[ \\t]+(?:Private|Pvt\\.?))?[ \\t]+(?:Limited|Ltd\\.?|LLP|LLC|PLC|Corporation|Corp\\.?|Inc\\.?|GmbH|Pte\\.?[ \\t]+Ltd\\.?)\\b")
-FAMILY_TRUST_RE = re.compile('\\b[A-Z][A-Za-z]+[ \\t]+Family[ \\t]+Trust\\b', re.IGNORECASE)
+FAMILY_TRUST_RE = re.compile(
+    r"\b[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)*\s+Family\s+Trust\b",
+    re.IGNORECASE,
+)
 CONTACT_PERSON_RE = re.compile('Contact\\s+Person:\\s*([A-Z][A-Za-z.]+(?:[ \\t]+[A-Z][A-Za-z.]+){0,3}(?:[ \\t]*/[ \\t]*[A-Z][A-Za-z.]+(?:[ \\t]+[A-Z][A-Za-z.]+){0,3})?)')
 NAME_CONTEXT_RE = re.compile("\\b(?i:from|dear|signed(?:\\s+by)?|regards|applicant|passenger|requester|customer|user|employee|reported\\s+by)\\s*:?\\s+([A-Z][a-z]+(?:[-'][A-Z][a-z]+)?(?:\\s+[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?){1,3})")
 NAME_TITLE_RE = re.compile("\\b(?:Mr|Mrs|Ms|Dr|Prof)\\.?\\s+([A-Z][a-z]+(?:[-'][A-Z][a-z]+)?(?:\\s+[A-Z][a-z]+){0,3})")
 US_ADDRESS_RE = re.compile("\\b\\d{1,5}\\s+[A-Z][A-Za-z0-9 .'-]+?(?:Street|St\\.|Avenue|Ave\\.|Road|Rd\\.|Lane|Ln\\.|Drive|Dr\\.|Boulevard|Blvd\\.|Way|Court|Ct\\.)(?:,?\\s+[A-Z][A-Za-z .]+)?(?:,?\\s+[A-Z]{2}\\s+\\d{5}(?:-\\d{4})?)?", re.IGNORECASE)
-COMPANY_DENY = {'companies act', 'limited liability', 'the company', 'our company', 'public limited company', 'private limited company', 'equity shares of face value'}
-COMPANY_STOPWORDS = {'offer', 'prospectus', 'act', 'regulation', 'regulations', 'section', 'dated', 'page', 'equity', 'share', 'shares', 'issue', 'fresh', 'board', 'built'}
-NAME_DENY = {'red herring', 'offer price', 'fresh issue', 'equity shares', 'book built', 'contact person', 'company secretary', 'compliance officer', 'registered office', 'corporate office', 'managing director', 'executive director', 'independent director', 'statutory auditors', 'lead managers', 'care report', 'fiscal year', 'india limited'}
+COMPANY_DENY = {
+    "companies act",
+    "limited liability",
+    "the company",
+    "our company",
+    "public limited company",
+    "private limited company",
+    "equity shares of face value",
+    "anchor investors",
+    "anchor investor",
+    "mutual funds",
+    "mutual fund",
+    "restated financial statements",
+    "financial statements",
+    "escrow accounts",
+    "escrow account",
+    "book running lead managers",
+    "lead managers",
+}
+COMPANY_STOPWORDS = {
+    "offer",
+    "prospectus",
+    "act",
+    "regulation",
+    "regulations",
+    "section",
+    "dated",
+    "page",
+    "equity",
+    "share",
+    "shares",
+    "issue",
+    "fresh",
+    "board",
+    "built",
+    "investors",
+    "investor",
+    "funds",
+    "fund",
+    "statements",
+    "accounts",
+    "escrow",
+    "mutual",
+    "restated",
+    "financial",
+    "anchor",
+    "managers",
+    "manager",
+}
+NAME_DENY = {
+    "red herring",
+    "offer price",
+    "fresh issue",
+    "equity shares",
+    "book built",
+    "contact person",
+    "company secretary",
+    "compliance officer",
+    "registered office",
+    "corporate office",
+    "managing director",
+    "executive director",
+    "independent director",
+    "statutory auditors",
+    "lead managers",
+    "care report",
+    "fiscal year",
+    "india limited",
+    "anchor investors",
+    "anchor investor",
+    "mutual funds",
+    "mutual fund",
+    "restated financial statements",
+    "financial statements",
+    "escrow accounts",
+    "escrow account",
+    "book running lead managers",
+    "lead managers",
+}
 
 @lru_cache(maxsize=1)
 def load_gazetteer() -> dict:
@@ -46,7 +125,7 @@ def _find_literal(text: str, needle: str, pii_type: str) -> list[dict]:
     if not needle.strip():
         return []
     spans = []
-    pattern = re.compile(re.escape(needle), re.IGNORECASE)
+    pattern = re.compile(re.escape(needle).replace(r"\ ", r"\s+"), re.IGNORECASE)
     for match in pattern.finditer(text):
         spans.append(_span(match.start(), match.end(), text, pii_type))
     return spans
@@ -165,18 +244,22 @@ def detect_companies(text: str) -> list[dict]:
         if name.lower() in COMPANY_DENY:
             continue
         spans.extend(_find_literal(text, name, 'company'))
-    for regex in (COMPANY_SUFFIX_RE, FAMILY_TRUST_RE):
-        for match in regex.finditer(text):
-            value = match.group(0).strip()
-            lowered = value.lower()
-            if lowered in COMPANY_DENY:
-                continue
-            tokens = set(re.findall('[a-z]+', lowered))
-            if tokens & COMPANY_STOPWORDS:
-                continue
-            if lowered.startswith('the ') and 'limited' not in lowered:
-                continue
-            spans.append(_span(match.start(), match.end(), text, 'company'))
+    for match in FAMILY_TRUST_RE.finditer(text):
+        value = match.group(0).strip()
+        if value.lower() in COMPANY_DENY:
+            continue
+        spans.append(_span(match.start(), match.end(), text, "company"))
+    for match in COMPANY_SUFFIX_RE.finditer(text):
+        value = match.group(0).strip()
+        lowered = value.lower()
+        if lowered in COMPANY_DENY:
+            continue
+        tokens = set(re.findall("[a-z]+", lowered))
+        if tokens & COMPANY_STOPWORDS:
+            continue
+        if lowered.startswith("the ") and "limited" not in lowered:
+            continue
+        spans.append(_span(match.start(), match.end(), text, "company"))
     return spans
 
 def detect_addresses(text: str) -> list[dict]:

@@ -1,4 +1,4 @@
-"""Small FastAPI app: upload a PDF, download a redacted .docx."""
+"""Small FastAPI app: upload a PDF, TXT, or DOCX; download a redacted .docx."""
 from __future__ import annotations
 import base64
 import os
@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from redact.evaluate import evaluate_pages, render_report
+from redact.ocr_images import OcrUnavailableError
 from redact.pipeline import redact_document
 ROOT = Path(__file__).resolve().parent
 DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -39,14 +40,18 @@ def _store_job(job_id: str, record: dict) -> None:
 
 def _run_job(source: Path, filename: str) -> dict:
     job_id = uuid.uuid4().hex[:12]
-    docx_path = OUTPUT_DIR / f'{job_id}_redacted.docx'
-    result = redact_document(source, docx_path)
+    docx_path = OUTPUT_DIR / f"{job_id}_redacted.docx"
+    try:
+        result = redact_document(source, docx_path)
+    except OcrUnavailableError as exc:
+        raise HTTPException(503, str(exc)) from exc
     docx_bytes = docx_path.read_bytes()
     metrics = None
     report_text = None
     report_path = None
+    kind = source.suffix.lower().lstrip(".")
     try:
-        metrics = evaluate_pages(result.original_pages)
+        metrics = evaluate_pages(result.original_pages, source_kind=kind)
         report_text = render_report(metrics)
         report_path = OUTPUT_DIR / f'{job_id}_evaluation.md'
         report_path.write_text(report_text, encoding='utf-8')
@@ -56,11 +61,21 @@ def _run_job(source: Path, filename: str) -> dict:
         report_path = None
     metrics_out = {'precision': metrics['precision'], 'recall': metrics['recall'], 'f1': metrics['f1'], 'accuracy': metrics['accuracy'], 'scored': metrics['scored']} if metrics else None
     _store_job(job_id, {'docx': str(docx_path), 'docx_bytes': docx_bytes, 'report': str(report_path) if report_path else None, 'report_text': report_text, 'counts': result.counts, 'metrics': metrics_out})
-    return {'job_id': job_id, 'filename': filename, 'counts': result.counts, 'metrics': metrics_out, 'docx_b64': base64.b64encode(docx_bytes).decode('ascii'), 'report_md': report_text}
+    return {
+        "job_id": job_id,
+        "filename": filename,
+        "counts": result.counts,
+        "metrics": metrics_out,
+        "images_removed": (result.extra or {}).get("images_removed", 0),
+        "docx_b64": base64.b64encode(docx_bytes).decode("ascii"),
+        "report_md": report_text,
+    }
 
 @app.get('/health')
 def health() -> dict:
-    return {'ok': True}
+    from redact.ocr_images import ocr_is_available
+
+    return {"ok": True, "ocr": ocr_is_available()}
 
 @app.get('/', response_class=HTMLResponse)
 def index() -> str:
@@ -68,9 +83,9 @@ def index() -> str:
 
 @app.post('/redact')
 async def redact(file: UploadFile=File(...)) -> dict:
-    suffix = Path(file.filename or 'upload.pdf').suffix.lower()
-    if suffix not in {'.pdf', '.txt'}:
-        raise HTTPException(400, 'Please upload a PDF or .txt file.')
+    suffix = Path(file.filename or "upload.pdf").suffix.lower()
+    if suffix not in {".pdf", ".txt", ".docx"}:
+        raise HTTPException(400, "Please upload a PDF, TXT, or DOCX file.")
     data = await file.read()
     if not data:
         raise HTTPException(400, 'The file is empty.')
