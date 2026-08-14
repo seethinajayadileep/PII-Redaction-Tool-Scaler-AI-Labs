@@ -59,7 +59,23 @@ def _run_job(source: Path, filename: str) -> dict:
         metrics = None
         report_text = None
         report_path = None
-    metrics_out = {'precision': metrics['precision'], 'recall': metrics['recall'], 'f1': metrics['f1'], 'accuracy': metrics['accuracy'], 'scored': metrics['scored']} if metrics else None
+    metrics_out = None
+    if metrics:
+        synthetic = metrics.get('synthetic') or {}
+        metrics_out = {
+            'precision': metrics['precision'],
+            'recall': metrics['recall'],
+            'f1': metrics['f1'],
+            'accuracy': metrics['accuracy'],
+            'scored': metrics['scored'],
+            'synthetic': {
+                'precision': synthetic.get('precision'),
+                'recall': synthetic.get('recall'),
+                'f1': synthetic.get('f1'),
+                'accuracy': synthetic.get('accuracy'),
+                'scored': bool(synthetic.get('scored')),
+            },
+        }
     _store_job(job_id, {'docx': str(docx_path), 'docx_bytes': docx_bytes, 'report': str(report_path) if report_path else None, 'report_text': report_text, 'counts': result.counts, 'metrics': metrics_out})
     return {
         "job_id": job_id,

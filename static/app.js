@@ -7,6 +7,8 @@ const results = document.getElementById("results");
 const countsEl = document.getElementById("counts");
 const metricsBox = document.getElementById("metrics-box");
 const metricsEl = document.getElementById("metrics");
+const metricsTitle = document.getElementById("metrics-title");
+const metricsNote = document.getElementById("metrics-note");
 const docxLink = document.getElementById("docx");
 const reportLink = document.getElementById("report");
 const dropzone = document.getElementById("dropzone");
@@ -168,16 +170,24 @@ function renderResults(payload) {
     ? `${total} replacement${total === 1 ? "" : "s"} across ${keys.length} type${keys.length === 1 ? "" : "s"} in ${payload.filename || "your file"}.`
     : `Nothing was replaced in ${payload.filename || "your file"}.`;
 
-  if (payload.metrics) {
+  if (payload.metrics && (payload.metrics.scored || payload.metrics.synthetic?.scored)) {
     const m = payload.metrics;
-    const show = (value) => (value === null || value === undefined ? "N/A" : Number(value).toFixed(3));
+    const isDocumentScore = Boolean(m.scored);
+    const displayed = isDocumentScore ? m : m.synthetic;
+    const show = (value) => Number(value).toFixed(3);
+
+    metricsTitle.textContent = isDocumentScore
+      ? "Optional: evaluation scores on labeled prospectus pages"
+      : "Optional: detector validation scores";
+    metricsNote.textContent = isDocumentScore
+      ? "These numbers are for hand-labeled prospectus pages only. Synthetic ticket tests are kept separate in the downloadable report."
+      : "The uploaded file was not scored against prospectus page labels. These scores come from separate labeled synthetic tests covering all nine required PII categories; they are not the accuracy of the uploaded document.";
     metricsBox.hidden = false;
     metricsEl.innerHTML = `
-      <div><dt>Precision</dt><dd>${show(m.precision)}</dd></div>
-      <div><dt>Recall</dt><dd>${show(m.recall)}</dd></div>
-      <div><dt>F1</dt><dd>${show(m.f1)}</dd></div>
-      <div><dt>Accuracy</dt><dd>${show(m.accuracy)}</dd></div>
-      <div><dt>Scored</dt><dd>${m.scored ? "true" : "false"}</dd></div>
+      <div><dt>Precision</dt><dd>${show(displayed.precision)}</dd></div>
+      <div><dt>Recall</dt><dd>${show(displayed.recall)}</dd></div>
+      <div><dt>F1</dt><dd>${show(displayed.f1)}</dd></div>
+      <div><dt>Accuracy</dt><dd>${show(displayed.accuracy)}</dd></div>
     `;
   } else {
     metricsBox.hidden = true;

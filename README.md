@@ -93,6 +93,8 @@ The report uses:
 
 The labelled prospectus evaluation covers selected PDF pages only. A DOCX is not scored against PDF character offsets, so its prospectus metrics are correctly reported as `N/A` with `Scored: false`. Synthetic labelled detector tests are reported separately and are not presented as full-document prospectus accuracy. When a metric has no valid denominator, it is reported as `N/A` rather than an invented score.
 
+In the web interface, an unscored DOCX shows the separate synthetic detector-validation scores instead of empty metric cards. The label and explanatory note make clear that these values validate the nine detector categories and are not scores for the uploaded prospectus. The downloadable report retains both scorecards and the unscored DOCX status.
+
 False-positive and false-negative examples are masked before being written to the report.
 
 ## Approach and trade-offs
